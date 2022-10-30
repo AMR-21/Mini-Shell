@@ -3,7 +3,7 @@
 cc = gcc -g
 CC = g++ -g
 
-all: clean
+all: shell
 
 lex.yy.o: shell.l 
 	lex shell.l
