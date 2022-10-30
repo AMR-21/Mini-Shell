@@ -12,11 +12,13 @@
  */
 
 %token	<string_val> WORD
+%token	<back_val> BACK
 
-%token 	NOTOKEN WRITE PIPE APPEND OPEN BACK NEWLINE 
+%token 	NOTOKEN WRITE PIPE APPEND OPEN NEWLINE 
 
 %union	{
 		char   *string_val;
+		char 	 *back_val;
 	}
 
 %{
@@ -29,6 +31,8 @@ extern "C"
 #include <stdio.h>
 #include "command.h"
 %}
+
+%define parse.error verbose
 
 %%
 
@@ -68,6 +72,12 @@ arg_list:
 argument:
 	WORD {
                printf("   Yacc: insert argument \"%s\"\n", $1);
+
+	       Command::_currentSimpleCommand->insertArgument( $1 );\
+	}
+	| BACK { 
+				 Command::_currentCommand._background = 1;
+				 			 printf("   Yacc: insert argument \"%s\"\n", $1);
 
 	       Command::_currentSimpleCommand->insertArgument( $1 );\
 	}
@@ -111,10 +121,16 @@ iomodifier_opt:
 		printf("   Yacc: insert input \"%s\"\n", $4);
 		Command::_currentCommand._inputFile = $4;
 	}
-	| BACK {
-		printf("   Yacc: activate background mode \n");
-		Command::_currentCommand._background = 1;
+	| APPEND WORD OPEN WORD {
+		printf("   Yacc: insert output \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+		printf("   Yacc: insert input \"%s\"\n", $4);
+		Command::_currentCommand._inputFile = $4;
 	}
+	// | BACK {
+	// 	printf("   Yacc: activate background mode \n");
+	// 	Command::_currentCommand._background = 1;
+	// }
 	| /* can be empty */ 
 	;
 

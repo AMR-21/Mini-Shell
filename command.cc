@@ -24,24 +24,24 @@ SimpleCommand::SimpleCommand()
 	// Creat available space for 5 arguments
 	_numberOfAvailableArguments = 5;
 	_numberOfArguments = 0;
-	_arguments = (char **) malloc( _numberOfAvailableArguments * sizeof( char * ) );
+	_arguments = (char **)malloc(_numberOfAvailableArguments * sizeof(char *));
 }
 
-void
-SimpleCommand::insertArgument( char * argument )
+void SimpleCommand::insertArgument(char *argument)
 {
-	if ( _numberOfAvailableArguments == _numberOfArguments  + 1 ) {
+	if (_numberOfAvailableArguments == _numberOfArguments + 1)
+	{
 		// Double the available space
 		_numberOfAvailableArguments *= 2;
-		_arguments = (char **) realloc( _arguments,
-				  _numberOfAvailableArguments * sizeof( char * ) );
+		_arguments = (char **)realloc(_arguments,
+																	_numberOfAvailableArguments * sizeof(char *));
 	}
-	
-	_arguments[ _numberOfArguments ] = argument;
+
+	_arguments[_numberOfArguments] = argument;
 
 	// Add NULL argument at the end
-	_arguments[ _numberOfArguments + 1] = NULL;
-	
+	_arguments[_numberOfArguments + 1] = NULL;
+
 	_numberOfArguments++;
 }
 
@@ -50,7 +50,7 @@ Command::Command()
 	// Create available space for one simple command
 	_numberOfAvailableSimpleCommands = 1;
 	_simpleCommands = (SimpleCommand **)
-		malloc( _numberOfSimpleCommands * sizeof( SimpleCommand * ) );
+			malloc(_numberOfSimpleCommands * sizeof(SimpleCommand *));
 
 	_numberOfSimpleCommands = 0;
 	_outFile = 0;
@@ -59,41 +59,45 @@ Command::Command()
 	_background = 0;
 }
 
-void
-Command::insertSimpleCommand( SimpleCommand * simpleCommand )
+void Command::insertSimpleCommand(SimpleCommand *simpleCommand)
 {
-	if ( _numberOfAvailableSimpleCommands == _numberOfSimpleCommands ) {
+	if (_numberOfAvailableSimpleCommands == _numberOfSimpleCommands)
+	{
 		_numberOfAvailableSimpleCommands *= 2;
-		_simpleCommands = (SimpleCommand **) realloc( _simpleCommands,
-			 _numberOfAvailableSimpleCommands * sizeof( SimpleCommand * ) );
+		_simpleCommands = (SimpleCommand **)realloc(_simpleCommands,
+																								_numberOfAvailableSimpleCommands * sizeof(SimpleCommand *));
 	}
-	
-	_simpleCommands[ _numberOfSimpleCommands ] = simpleCommand;
+
+	_simpleCommands[_numberOfSimpleCommands] = simpleCommand;
 	_numberOfSimpleCommands++;
 }
 
-void
-Command:: clear()
+void Command::clear()
 {
-	for ( int i = 0; i < _numberOfSimpleCommands; i++ ) {
-		for ( int j = 0; j < _simpleCommands[ i ]->_numberOfArguments; j ++ ) {
-			free ( _simpleCommands[ i ]->_arguments[ j ] );
+	for (int i = 0; i < _numberOfSimpleCommands; i++)
+	{
+		for (int j = 0; j < _simpleCommands[i]->_numberOfArguments; j++)
+		{
+			free(_simpleCommands[i]->_arguments[j]);
 		}
-		
-		free ( _simpleCommands[ i ]->_arguments );
-		free ( _simpleCommands[ i ] );
+
+		free(_simpleCommands[i]->_arguments);
+		free(_simpleCommands[i]);
 	}
 
-	if ( _outFile ) {
-		free( _outFile );
+	if (_outFile)
+	{
+		free(_outFile);
 	}
 
-	if ( _inputFile ) {
-		free( _inputFile );
+	if (_inputFile)
+	{
+		free(_inputFile);
 	}
 
-	if ( _errFile ) {
-		free( _errFile );
+	if (_errFile)
+	{
+		free(_errFile);
 	}
 
 	_numberOfSimpleCommands = 0;
@@ -103,37 +107,38 @@ Command:: clear()
 	_background = 0;
 }
 
-void
-Command::print()
+void Command::print()
 {
 	printf("\n\n");
 	printf("              COMMAND TABLE                \n");
 	printf("\n");
 	printf("  #   Simple Commands\n");
 	printf("  --- ----------------------------------------------------------\n");
-	
-	for ( int i = 0; i < _numberOfSimpleCommands; i++ ) {
-		printf("  %-3d ", i );
-		for ( int j = 0; j < _simpleCommands[i]->_numberOfArguments; j++ ) {
-			printf("\"%s\" \t", _simpleCommands[i]->_arguments[ j ] );
+
+	for (int i = 0; i < _numberOfSimpleCommands; i++)
+	{
+		printf("  %-3d ", i);
+		for (int j = 0; j < _simpleCommands[i]->_numberOfArguments; j++)
+		{
+			printf("\"%s\" \t", _simpleCommands[i]->_arguments[j]);
 		}
 	}
 
-	printf( "\n\n" );
-	printf( "  Output       Input        Error        Background\n" );
-	printf( "  ------------ ------------ ------------ ------------\n" );
-	printf( "  %-12s %-12s %-12s %-12s\n", _outFile?_outFile:"default",
-		_inputFile?_inputFile:"default", _errFile?_errFile:"default",
-		_background?"YES":"NO");
-	printf( "\n\n" );
-	
+	printf("\n\n");
+	printf("  Output       Input        Error        Background\n");
+	printf("  ------------ ------------ ------------ ------------\n");
+	printf("  %-12s %-12s %-12s %-12s\n", _outFile ? _outFile : "default",
+				 _inputFile ? _inputFile : "default", _errFile ? _errFile : "default",
+				 _background ? "YES" : "NO");
+	printf("\n\n");
 }
 
-void
-Command::execute()
+void Command::execute()
 {
+
 	// Don't do anything if there are no simple commands
-	if ( _numberOfSimpleCommands == 0 ) {
+	if (_numberOfSimpleCommands == 0)
+	{
 		prompt();
 		return;
 	}
@@ -145,34 +150,55 @@ Command::execute()
 	// For every simple command fork a new process
 	// Setup i/o redirection
 	// and call exec
+	// for (int i = 0; i < _numberOfSimpleCommands; i++)
+	// {
+	// 	pid_t pid = fork();
 
+	// 	if (pid == -1)
+	// 	{
+	// 		perror("Command: fork\n");
+	// 		exit(2);
+	// 	}
+
+	// 	if (pid == 0)
+	// 	{
+
+	// 		// Child
+	// 		execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
+
+	// 		// exec() is not suppose to return, something went wrong
+	// 		perror("Error: exec command");
+	// 		exit(2);
+	// 	}
+	// 	if (!_currentCommand._background)
+	// 	{
+	// 		waitpid(pid, 0, 0);
+	// 	}
+	// }
 
 	// Clear to prepare for next command
 	clear();
-	
+
 	// Print new prompt
 	prompt();
 }
 
 // Shell implementation
 
-void
-Command::prompt()
+void Command::prompt()
 {
 	printf("myshell>");
 	fflush(stdout);
 }
 
 Command Command::_currentCommand;
-SimpleCommand * Command::_currentSimpleCommand;
+SimpleCommand *Command::_currentSimpleCommand;
 
 int yyparse(void);
 
-int 
-main()
+int main()
 {
 	Command::_currentCommand.prompt();
 	yyparse();
 	return 0;
 }
-
