@@ -37,7 +37,6 @@
 }
 
 "&"		{
-		yylval.back_val = strdup(yytext);
 		return BACK;
 }
 

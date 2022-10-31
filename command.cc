@@ -56,6 +56,7 @@ Command::Command()
 	_outFile = 0;
 	_inputFile = 0;
 	_errFile = 0;
+	_outOverwrite = 0;
 	_background = 0;
 }
 
@@ -104,6 +105,7 @@ void Command::clear()
 	_outFile = 0;
 	_inputFile = 0;
 	_errFile = 0;
+	_outOverwrite = 0;
 	_background = 0;
 }
 
@@ -152,14 +154,21 @@ void Command::execute()
 	// and call exec
 	// for (int i = 0; i < _numberOfSimpleCommands; i++)
 	// {
+	// 	if (_currentCommand._inputFile || _currentCommand._outFile || _currentCommand._errFile)
+	// 	{
+	// 	}
+
+	// 	// Create process
 	// 	pid_t pid = fork();
 
+	// 	// Catch failure
 	// 	if (pid == -1)
 	// 	{
-	// 		perror("Command: fork\n");
+	// 		perror("\033[0;31mError\nCommand: fork\n");
 	// 		exit(2);
 	// 	}
 
+	// 	// Implement process
 	// 	if (pid == 0)
 	// 	{
 
@@ -167,7 +176,7 @@ void Command::execute()
 	// 		execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
 
 	// 		// exec() is not suppose to return, something went wrong
-	// 		perror("Error: exec command");
+	// 		perror("\033[0;31mError\nInvalid command\n");
 	// 		exit(2);
 	// 	}
 	// 	if (!_currentCommand._background)
@@ -179,6 +188,7 @@ void Command::execute()
 	// Clear to prepare for next command
 	clear();
 
+	printf("\n");
 	// Print new prompt
 	prompt();
 }
