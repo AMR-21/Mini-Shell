@@ -95,45 +95,90 @@ command_word:
 	;
 
 iomodifier_opt:
-	WRITE WORD {
+	WRITE WORD { 
+		// Output to file ls > out
+		printf("   Yacc: insert output \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+		Command::_currentCommand._outOverwrite = 1;
+	}
+	| APPEND WORD { 
+		// Output to file ls >> out
 		printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 	}
-	| APPEND WORD {
-		printf("   Yacc: insert output \"%s\"\n", $2);
-		Command::_currentCommand._outFile = $2;
-	}
-	| OPEN WORD {
+	| OPEN WORD { 
+		// input file ls < out
 		printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 	}
-	| WRITE WORD OPEN WORD {
+	| WRITE WORD OPEN WORD { 
+		// cat > out < in
 		printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 		printf("   Yacc: insert input \"%s\"\n", $4);
 		Command::_currentCommand._inputFile = $4;
+		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD WRITE WORD {
+		// cat < in > out
 		printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
 		printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
+		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD APPEND WORD {
+		// cat < in >> out
 		printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
 		printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 	}
 	| APPEND WORD OPEN WORD {
+		// cat >> out < in
 		printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 		printf("   Yacc: insert input \"%s\"\n", $4);
 		Command::_currentCommand._inputFile = $4;
 	}
 	| BACK {
+		// httpd &
 		printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
+	}
+	| APPEND WORD BACK {
+		// ls /tt >> out2 &
+		printf("   Yacc: activate background mode \n");
+		Command::_currentCommand._background = 1;
+		printf("   Yacc: insert output \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+	}
+	| WRITE WORD BACK {
+		// ls /tt > out2 &
+		printf("   Yacc: activate background mode \n");
+		Command::_currentCommand._background = 1;
+		printf("   Yacc: insert output \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+		Command::_currentCommand._outOverwrite = 1;
+	}
+	| OPEN WORD WRITE WORD BACK {
+		// cat < in > out2 &
+		printf("   Yacc: activate background mode \n");
+		Command::_currentCommand._background = 1;
+		printf("   Yacc: insert output \"%s\"\n", $4);
+		Command::_currentCommand._outFile = $4;
+		printf("   Yacc: insert input \"%s\"\n", $2);
+		Command::_currentCommand._inputFile = $2;
+		Command::_currentCommand._outOverwrite = 1;
+	}
+	| OPEN WORD APPEND WORD BACK {
+		// cat < in >> out &
+		printf("   Yacc: activate background mode \n");
+		Command::_currentCommand._background = 1;
+		printf("   Yacc: insert output \"%s\"\n", $4);
+		Command::_currentCommand._outFile = $4;
+		printf("   Yacc: insert input \"%s\"\n", $2);
+		Command::_currentCommand._inputFile = $2;
 	}
 	| /* can be empty */ 
 	;
