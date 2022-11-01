@@ -158,8 +158,8 @@ void Command::execute()
 	for (int i = 0; i < _numberOfSimpleCommands; i++)
 	{
 		ioFlag = 0;
-		// Check for possible I/0 redirection
 
+		// Check for possible I/0 redirection
 		if (_currentCommand._inputFile ||
 				_currentCommand._outFile ||
 				_currentCommand._errFile)
