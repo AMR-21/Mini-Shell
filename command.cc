@@ -59,6 +59,7 @@ Command::Command()
 	_errFile = 0;
 	_outOverwrite = 0;
 	_background = 0;
+	_pipe = 0;
 }
 
 void Command::insertSimpleCommand(SimpleCommand *simpleCommand)
@@ -108,6 +109,7 @@ void Command::clear()
 	_errFile = 0;
 	_outOverwrite = 0;
 	_background = 0;
+	_pipe = 0;
 }
 
 void Command::print()
@@ -153,94 +155,98 @@ void Command::execute()
 	// For every simple command fork a new process
 	// Setup i/o redirection
 	// and call exec
-	int ioFlag, defaultin, defaultout, defaulterr, outFl, inFl;
+	int currentIn = 0, defaultin, defaultout, defaulterr, outFl, inFl, errorFlag = 1;
+	// defaultin = dup(0);
+	// defaultout = dup(1);
+	int fd[2];
+	pid_t pid;
+
+	// Open the input file
+	if (_inputFile)
+	{
+		// open the input file
+		inFl = open(_inputFile, O_RDONLY, 0444);
+
+		// Verification
+		if (inFl < 0)
+		{
+			perror("\033[0;31mError\nOpening input file");
+		}
+
+		// Redirect the input file to given input file
+	}
+
+	// Open/Create the output file
+	if (_outFile)
+	{
+		// open the output file
+		// Check the writing mode
+		if (_currentCommand._outOverwrite)
+		{
+			// Overwrite >
+			outFl = open(_outFile, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+		}
+		else
+		{
+			// Append >>
+			outFl = open(_outFile, O_CREAT | O_WRONLY | O_APPEND, 0666);
+		}
+
+		// Verification
+		if (outFl < 0)
+		{
+			perror("\033[0;31mError\nOpening output file");
+			errorFlag = 1;
+		}
+
+		// // Redirect the output file to given input file
+		// dup2(outFl, 1);
+		// close(outFl);
+	}
 
 	for (int i = 0; i < _numberOfSimpleCommands; i++)
 	{
-		ioFlag = 0;
-
-		// Check for possible I/0 redirection
-		if (_currentCommand._inputFile ||
-				_currentCommand._outFile ||
-				_currentCommand._errFile)
+		if (pipe(fd) < 0)
 		{
-			ioFlag = 1;
-
-			// Save default descriptors values
-			defaultin = dup(0);
-			defaultout = dup(1);
-			defaulterr = dup(2);
-
-			// Set the input file
-			if (_currentCommand._inputFile)
-			{
-				// open the input file
-				inFl = open(_inputFile, O_RDONLY, 0444);
-
-				// Verification
-				if (inFl < 0)
-				{
-					perror("\033[0;31mError\nOpening input file");
-					break;
-				}
-
-				// Redirect the input file to given input file
-				dup2(inFl, 0);
-				close(inFl);
-			}
-
-			// Set the output file
-			if (_currentCommand._outFile)
-			{
-				// open the output file
-				// Check the writing mode
-				if (_currentCommand._outOverwrite)
-				{
-					// Overwrite >
-					outFl = open(_outFile, O_CREAT | O_WRONLY | O_TRUNC, 0666);
-				}
-				else
-				{
-					// Append >>
-					outFl = open(_outFile, O_CREAT | O_WRONLY | O_APPEND, 0666);
-				}
-
-				// Verification
-				if (outFl < 0)
-				{
-					perror("\033[0;31mError\nOpening output file");
-					break;
-				}
-
-				// Redirect the output file to given input file
-				dup2(outFl, 1);
-				close(outFl);
-			}
-		}
-
-		// Create process
-		pid_t pid = fork();
-
-		// Catch failure
-		if (pid == -1)
-		{
-			perror("\033[0;31mError\nCommand: fork\n");
+			perror("\033[0;31mError\nFailed to create pipe\n");
 			break;
 		}
 
-		// Command execution in child process
-		if (pid == 0)
+		if ((pid = fork()) == -1)
 		{
+			perror("\033[0;31mError\nFailed to create process\n");
+			break;
+		}
 
-			if (ioFlag)
+		else if (!pid)
+		{
+			if (_inputFile)
 			{
-				// close file descriptors that are not needed
-				close(defaultin);
-				close(defaultout);
-				close(defaulterr);
+				dup2(inFl, 0);
+				close(inFl);
+				_inputFile = 0;
+			}
+			else
+			{
+				// redirection to current input
+				dup2(currentIn, 0);
+				// Close input of pipe after redirection
+				close(fd[0]);
 			}
 
-			// Child
+			// Not last one
+			if (i + 1 != _numberOfSimpleCommands)
+			{
+				// Redirection to output of the pipe
+				dup2(fd[1], 1);
+			} // Last one
+			else if (_outFile)
+			{
+				// Redirection to the output file
+				dup2(outFl, 1);
+				close(outFl);
+			}
+
 			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
 
 			// exec() is not suppose to return, something went wrong
@@ -248,29 +254,20 @@ void Command::execute()
 			break;
 		}
 
-		if (ioFlag)
-		{
-			// Restore input, output, and error defaults
-			dup2(defaultin, 0);
-			dup2(defaultout, 1);
-			dup2(defaulterr, 2);
-
-			// Close file descriptors that are not needed
-			if (_currentCommand._outFile)
-				close(outFl);
-			if (_currentCommand._inputFile)
-				close(inFl);
-			close(defaultin);
-			close(defaultout);
-			close(defaulterr);
-		}
-
 		// Check background flag
 		if (!_currentCommand._background)
 		{
 			waitpid(pid, 0, 0);
 		}
+
+		// Close output pipe file
+		close(fd[1]);
+		currentIn = fd[0];
 	}
+
+	// Redirection to stdin and stdout
+	dup2(defaultin, 0);
+	dup2(defaultout, 1);
 
 	// Clear to prepare for next command
 	clear();

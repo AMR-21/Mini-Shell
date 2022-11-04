@@ -26,6 +26,7 @@ struct Command
 	char *_errFile;
 	int _outOverwrite;
 	int _background;
+	int _pipe;
 
 	void prompt();
 	void print();

@@ -91,6 +91,7 @@ command_word:
 	       
 	       Command::_currentSimpleCommand = new SimpleCommand();
 	       Command::_currentSimpleCommand->insertArgument( $2 );
+				 Command::_currentCommand._pipe ++;
 	}
 	;
 
@@ -146,19 +147,19 @@ iomodifier_opt:
 		printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
 	}
-	| APPEND WORD BACK {
-		// ls /tt >> out2 &
+	| BACK APPEND WORD  {
+		// ls /tt  & >> out2 
 		printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
-		printf("   Yacc: insert output \"%s\"\n", $2);
-		Command::_currentCommand._outFile = $2;
+		printf("   Yacc: insert output \"%s\"\n", $3);
+		Command::_currentCommand._outFile = $3;
 	}
-	| WRITE WORD BACK {
-		// ls /tt > out2 &
+	| BACK WRITE WORD  {
+		// ls /tt & > out2 
 		printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
-		printf("   Yacc: insert output \"%s\"\n", $2);
-		Command::_currentCommand._outFile = $2;
+		printf("   Yacc: insert output \"%s\"\n", $3);
+		Command::_currentCommand._outFile = $3;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD WRITE WORD BACK {
