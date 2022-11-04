@@ -206,6 +206,12 @@ void Command::execute()
 
 	for (int i = 0; i < _numberOfSimpleCommands; i++)
 	{
+		if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
+		{
+			chdir(_simpleCommands[i]->_arguments[1]);
+			continue;
+		}
+
 		if (pipe(fd) < 0)
 		{
 			perror("\033[0;31mError\nFailed to create pipe\n");
@@ -228,7 +234,7 @@ void Command::execute()
 			}
 			else
 			{
-				// redirection to current input
+				// redirection to current input - stdin initial
 				dup2(currentIn, 0);
 				// Close input of pipe after redirection
 				close(fd[0]);
@@ -283,7 +289,9 @@ void Command::execute()
 
 void Command::prompt()
 {
-	printf("myshell>");
+	char curr[100];
+	printf("Current Directory> %s\n", getcwd(curr, 100));
+	printf("myshell> ");
 	fflush(stdout);
 }
 
