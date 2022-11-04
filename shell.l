@@ -12,9 +12,14 @@
 #include <string.h>
 #include "y.tab.h"
 
+int yylex();
+
 %}
 
 %%
+
+
+
 
 \n 	{
 		return NEWLINE;
@@ -23,6 +28,7 @@
 [ \t] 	{
 		/* Discard spaces and tabs */
      	}	
+
 
 ">" 	{
 		return WRITE;
@@ -46,9 +52,10 @@
 
 [^ \t\n][^ \t\n]*  {
 		/* Assume that file names have only alpha chars */
-		yylval.string_val = strdup(yytext);		
+		yylval.string_val = strdup(yytext);
 		return WORD;
 	}
+
 
 .	{
 		/* Invalid character in input */

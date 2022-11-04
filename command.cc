@@ -17,8 +17,12 @@
 #include <string.h>
 #include <signal.h>
 #include <fcntl.h>
+#include "y.tab.h"
 
 #include "command.h"
+
+extern int yyparse(void);
+extern FILE *yyin;
 
 SimpleCommand::SimpleCommand()
 {
@@ -30,6 +34,7 @@ SimpleCommand::SimpleCommand()
 
 void SimpleCommand::insertArgument(char *argument)
 {
+
 	if (_numberOfAvailableArguments == _numberOfArguments + 1)
 	{
 		// Double the available space
@@ -155,9 +160,10 @@ void Command::execute()
 	// For every simple command fork a new process
 	// Setup i/o redirection
 	// and call exec
-	int currentIn = 0, defaultin, defaultout, defaulterr, outFl, inFl, errorFlag = 1;
-	// defaultin = dup(0);
-	// defaultout = dup(1);
+	int currentIn = 0, defaultin, defaultout, defaulterr, outFl, inFl, errFl, errorFlag = 0;
+	defaultin = dup(0);
+	defaultout = dup(1);
+	defaulterr = dup(2);
 	int fd[2];
 	pid_t pid;
 
@@ -171,6 +177,7 @@ void Command::execute()
 		if (inFl < 0)
 		{
 			perror("\033[0;31mError\nOpening input file");
+			errorFlag = 1;
 		}
 
 		// Redirect the input file to given input file
@@ -204,76 +211,118 @@ void Command::execute()
 		// close(outFl);
 	}
 
-	for (int i = 0; i < _numberOfSimpleCommands; i++)
+	// Open/Create the output file
+	if (_errFile)
 	{
-		if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
+		// open the output file
+		// Check the writing mode
+		if (_currentCommand._outOverwrite)
 		{
-			chdir(_simpleCommands[i]->_arguments[1]);
-			continue;
+			// Overwrite >
+			errFl = open(_outFile, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+		}
+		else
+		{
+			// Append >>
+			errFl = open(_outFile, O_CREAT | O_WRONLY | O_APPEND, 0666);
 		}
 
-		if (pipe(fd) < 0)
+		// Verification
+		if (errFl < 0)
 		{
-			perror("\033[0;31mError\nFailed to create pipe\n");
-			break;
+			perror("\033[0;31mError\nOpening error output file");
+			errorFlag = 1;
 		}
 
-		if ((pid = fork()) == -1)
-		{
-			perror("\033[0;31mError\nFailed to create process\n");
-			break;
-		}
-
-		else if (!pid)
-		{
-			if (_inputFile)
-			{
-				dup2(inFl, 0);
-				close(inFl);
-				_inputFile = 0;
-			}
-			else
-			{
-				// redirection to current input - stdin initial
-				dup2(currentIn, 0);
-				// Close input of pipe after redirection
-				close(fd[0]);
-			}
-
-			// Not last one
-			if (i + 1 != _numberOfSimpleCommands)
-			{
-				// Redirection to output of the pipe
-				dup2(fd[1], 1);
-			} // Last one
-			else if (_outFile)
-			{
-				// Redirection to the output file
-				dup2(outFl, 1);
-				close(outFl);
-			}
-
-			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
-
-			// exec() is not suppose to return, something went wrong
-			perror("\033[0;31mError\nInvalid command\n");
-			break;
-		}
-
-		// Check background flag
-		if (!_currentCommand._background)
-		{
-			waitpid(pid, 0, 0);
-		}
-
-		// Close output pipe file
-		close(fd[1]);
-		currentIn = fd[0];
+		// // Redirect the output file to given input file
+		// dup2(outFl, 1);
+		// close(outFl);
 	}
 
-	// Redirection to stdin and stdout
+	if (!errorFlag)
+		for (int i = 0; i < _numberOfSimpleCommands; i++)
+		{
+			if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
+			{
+				chdir(_simpleCommands[i]->_arguments[1]);
+				continue;
+			}
+
+			if (!strcmp(_simpleCommands[i]->_arguments[0], "exit"))
+			{
+				printf("\n\nGOOD BYE!\n\n");
+				exit(0);
+			}
+
+			if (pipe(fd) < 0)
+			{
+				perror("\033[0;31mError\nFailed to create pipe");
+				break;
+			}
+
+			if ((pid = fork()) == -1)
+			{
+				perror("\033[0;31mError\nFailed to create process");
+				break;
+			}
+
+			else if (!pid)
+			{
+				if (_inputFile)
+				{
+					dup2(inFl, 0);
+					close(inFl);
+					_inputFile = 0;
+				}
+				else
+				{
+					// redirection to current input - stdin initial
+					dup2(currentIn, 0);
+					// Close input of pipe after redirection
+					close(fd[0]);
+				}
+
+				// Not last one
+				if (i + 1 != _numberOfSimpleCommands)
+				{
+					// Redirection to output of the pipe
+					dup2(fd[1], 1);
+				} // Last one
+				else if (_outFile)
+				{
+					// Redirection to the output file
+					dup2(outFl, 1);
+					close(outFl);
+
+					if (_errFile)
+					{
+						dup2(errFl, 2);
+						close(errFl);
+					}
+				}
+
+				execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
+
+				// exec() is not suppose to return, something went wrong
+				perror("\033[0;31mError\nInvalid command");
+				break;
+			}
+
+			// Check background flag
+			if (!_currentCommand._background)
+			{
+				waitpid(pid, 0, 0);
+			}
+
+			// Close output pipe file
+			close(fd[1]);
+			currentIn = fd[0];
+		}
+
+	// Redirection to stdin, stdout, and stderr
 	dup2(defaultin, 0);
 	dup2(defaultout, 1);
+	dup2(defaultout, 2);
 
 	// Clear to prepare for next command
 	clear();
@@ -298,11 +347,19 @@ void Command::prompt()
 Command Command::_currentCommand;
 SimpleCommand *Command::_currentSimpleCommand;
 
-int yyparse(void);
+void signal_handler(int signo)
+{
+	signal(SIGINT, signal_handler);
+	printf("\n\nYou can't exit the program with ctrl+c..if you want to exit type exit\n\n");
+	Command::_currentCommand.prompt();
+	fflush(stdout);
+}
 
 int main()
 {
 	Command::_currentCommand.prompt();
+	signal(SIGINT, signal_handler);
 	yyparse();
+
 	return 0;
 }

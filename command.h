@@ -32,11 +32,13 @@ struct Command
 	void print();
 	void execute();
 	void clear();
+	void verify(SimpleCommand *scmd);
 
 	Command();
 	void insertSimpleCommand(SimpleCommand *simpleCommand);
 
 	static Command _currentCommand;
+	static Command _tempCommand;
 	static SimpleCommand *_currentSimpleCommand;
 };
 

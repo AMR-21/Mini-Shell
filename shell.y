@@ -70,7 +70,6 @@ arg_list:
 argument:
 	WORD {
                printf("   Yacc: insert argument \"%s\"\n", $1);
-
 	       Command::_currentSimpleCommand->insertArgument( $1 );\
 	}
 	| command_word
@@ -149,17 +148,17 @@ iomodifier_opt:
 	}
 	| BACK APPEND WORD  {
 		// ls /tt  & >> out2 
-		printf("   Yacc: activate background mode \n");
-		Command::_currentCommand._background = 1;
 		printf("   Yacc: insert output \"%s\"\n", $3);
 		Command::_currentCommand._outFile = $3;
+		printf("   Yacc: insert error output \"%s\"\n", $3);
+		Command::_currentCommand._errFile = $3;
 	}
 	| BACK WRITE WORD  {
-		// ls /tt & > out2 
-		printf("   Yacc: activate background mode \n");
-		Command::_currentCommand._background = 1;
+		// ls /tt & > out2
 		printf("   Yacc: insert output \"%s\"\n", $3);
 		Command::_currentCommand._outFile = $3;
+		printf("   Yacc: insert error output \"%s\"\n", $3);
+		Command::_currentCommand._errFile = $3;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD WRITE WORD BACK {
