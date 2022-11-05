@@ -74,7 +74,8 @@ arg_list:
 
 argument:
 	WORD {
-               printf("   Yacc: insert argument \"%s\"\n", $1);
+          if(Command::_currentCommand.vef) 
+							printf("   Yacc: insert argument \"%s\"\n", $1);
 	       Command::_currentSimpleCommand->insertArgument( $1 );\
 	}
 	| command_word
@@ -98,6 +99,7 @@ verify:
 
 command_word:
 	WORD {
+				if(Command::_currentCommand.vef)
                printf("   Yacc: insert command \"%s\"\n", $1);
 	       
 	       Command::_currentSimpleCommand = new SimpleCommand();
@@ -107,8 +109,8 @@ command_word:
 		Command::_currentCommand.pipeIN = 1;
 		Command::_currentCommand.
 			insertSimpleCommand( Command::_currentSimpleCommand );
-
-			printf("   Yacc: insert piped command \"%s\"\n", $2);
+			if(Command::_currentCommand.vef)
+		  	printf("   Yacc: insert piped command \"%s\"\n", $2);
 	       
 	       Command::_currentSimpleCommand = new SimpleCommand();
 	       Command::_currentSimpleCommand->insertArgument( $2 );
@@ -119,18 +121,21 @@ command_word:
 iomodifier_opt:
 	WRITE WORD { 
 		// Output to file ls > out
-		printf("   Yacc: insert output \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| APPEND WORD { 
 		// Output to file ls >> out
-		printf("   Yacc: insert output \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 	}
 	| OPEN WORD { 
 		// input file ls < out
-		printf("   Yacc: insert input \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 	}
 	| WRITE WORD OPEN WORD { 
@@ -143,63 +148,80 @@ iomodifier_opt:
 	}
 	| OPEN WORD WRITE WORD {
 		// cat < in > out
-		printf("   Yacc: insert output \"%s\"\n", $4);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
-		printf("   Yacc: insert input \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD APPEND WORD {
 		// cat < in >> out
-		printf("   Yacc: insert output \"%s\"\n", $4);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
-		printf("   Yacc: insert input \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 	}
 	| APPEND WORD OPEN WORD {
 		// cat >> out < in
-		printf("   Yacc: insert output \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
-		printf("   Yacc: insert input \"%s\"\n", $4);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $4);
 		Command::_currentCommand._inputFile = $4;
 	}
 	| BACK {
 		// httpd &
-		printf("   Yacc: activate background mode \n");
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
 	}
 	| BACK APPEND WORD  {
 		// ls /tt  & >> out2 
-		printf("   Yacc: insert output \"%s\"\n", $3);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $3);
 		Command::_currentCommand._outFile = $3;
-		printf("   Yacc: insert error output \"%s\"\n", $3);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert error output \"%s\"\n", $3);
 		Command::_currentCommand._errFile = $3;
 	}
 	| BACK WRITE WORD  {
 		// ls /tt & > out2
-		printf("   Yacc: insert output \"%s\"\n", $3);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $3);
 		Command::_currentCommand._outFile = $3;
-		printf("   Yacc: insert error output \"%s\"\n", $3);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert error output \"%s\"\n", $3);
 		Command::_currentCommand._errFile = $3;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD WRITE WORD BACK {
 		// cat < in > out2 &
-		printf("   Yacc: activate background mode \n");
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
-		printf("   Yacc: insert output \"%s\"\n", $4);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
-		printf("   Yacc: insert input \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 		Command::_currentCommand._outOverwrite = 1;
 	}
 	| OPEN WORD APPEND WORD BACK {
 		// cat < in >> out &
-		printf("   Yacc: activate background mode \n");
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: activate background mode \n");
 		Command::_currentCommand._background = 1;
-		printf("   Yacc: insert output \"%s\"\n", $4);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert output \"%s\"\n", $4);
 		Command::_currentCommand._outFile = $4;
-		printf("   Yacc: insert input \"%s\"\n", $2);
+		if(Command::_currentCommand.vef)
+			printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand._inputFile = $2;
 	}
 	| /* can be empty */ 
