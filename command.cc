@@ -19,6 +19,8 @@
 #include <fcntl.h>
 #include "y.tab.h"
 #include <time.h>
+#include <iostream>
+using namespace std;
 
 #include "command.h"
 
@@ -313,7 +315,16 @@ void Command::execute()
 		{
 			if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
 			{
-				chdir(_simpleCommands[i]->_arguments[1]);
+				if (_simpleCommands[i]->_arguments[1][0] == '\'')
+				{
+					string s = _simpleCommands[i]->_arguments[1];
+					string dest = s.substr(1, s.length() - 2);
+					chdir(dest.c_str());
+				}
+				else
+				{
+					chdir(_simpleCommands[i]->_arguments[1]);
+				}
 				continue;
 			}
 
@@ -408,8 +419,8 @@ void Command::execute()
 void Command::prompt()
 {
 	char curr[100];
-	printf("Current Directory> %s\n", getcwd(curr, 100));
-	printf("myshell> ");
+	printf("%s/", getcwd(curr, 100));
+	printf("~:myshell$ ");
 	fflush(stdout);
 	vef = 0;
 }

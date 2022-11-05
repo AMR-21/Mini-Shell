@@ -29,6 +29,10 @@ int yylex();
 		/* Discard spaces and tabs */
      	}	
 
+"'"[^\n]*"'" {
+		yylval.string_val = strdup(yytext);
+		return SRC;
+}
 
 ">" 	{
 		return WRITE;

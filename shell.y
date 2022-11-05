@@ -12,6 +12,7 @@
  */
 
 %token	<string_val> WORD
+token	<string_val> SRC
 
 %token 	NOTOKEN WRITE PIPE APPEND OPEN BACK NEWLINE 
 
@@ -28,6 +29,7 @@ extern "C"
 }
 #define yylex yylex
 #include <stdio.h>
+#include <string.h>
 #include "command.h"
 extern FILE *yyin;
 %}
@@ -78,6 +80,11 @@ argument:
 							printf("   Yacc: insert argument \"%s\"\n", $1);
 	       Command::_currentSimpleCommand->insertArgument( $1 );\
 	}
+	| SRC {
+		if(Command::_currentCommand.vef) 
+							printf("   Yacc: insert argument \"%s\"\n", $1);
+	       Command::_currentSimpleCommand->insertArgument( $1 );\
+	}
 	| command_word
 	;
 	
@@ -116,6 +123,7 @@ command_word:
 	       Command::_currentSimpleCommand->insertArgument( $2 );
 				 Command::_currentCommand._pipe ++;
 	}
+	
 	;
 
 iomodifier_opt:
