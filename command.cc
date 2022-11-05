@@ -315,26 +315,31 @@ void Command::execute()
 		{
 			if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
 			{
+				int errFlag = 0;
 				if (!_simpleCommands[i]->_arguments[1])
 				{
-					chdir(getenv("HOME"));
+					errFlag = chdir(getenv("HOME"));
 				}
 				else if (_simpleCommands[i]->_arguments[1][0] == '~')
 				{
 					chdir(getenv("HOME"));
 					string s = _simpleCommands[i]->_arguments[1];
-					string dest = s.substr(2, s.length() - 2);
-					chdir(dest.c_str());
+					string dest = s.substr(2, s.length() - 1);
+					errFlag = chdir(dest.c_str());
 				}
 				else if (_simpleCommands[i]->_arguments[1][0] == '\'')
 				{
 					string s = _simpleCommands[i]->_arguments[1];
 					string dest = s.substr(1, s.length() - 2);
-					chdir(dest.c_str());
+					errFlag = chdir(dest.c_str());
 				}
 				else
 				{
-					chdir(_simpleCommands[i]->_arguments[1]);
+					errFlag = chdir(_simpleCommands[i]->_arguments[1]);
+				}
+				if (errFlag == -1)
+				{
+					perror("\033[0;31mError");
 				}
 				continue;
 			}
