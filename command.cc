@@ -315,7 +315,18 @@ void Command::execute()
 		{
 			if (!strcmp(_simpleCommands[i]->_arguments[0], "cd"))
 			{
-				if (_simpleCommands[i]->_arguments[1][0] == '\'')
+				if (!_simpleCommands[i]->_arguments[1])
+				{
+					chdir(getenv("HOME"));
+				}
+				else if (_simpleCommands[i]->_arguments[1][0] == '~')
+				{
+					chdir(getenv("HOME"));
+					string s = _simpleCommands[i]->_arguments[1];
+					string dest = s.substr(2, s.length() - 2);
+					chdir(dest.c_str());
+				}
+				else if (_simpleCommands[i]->_arguments[1][0] == '\'')
 				{
 					string s = _simpleCommands[i]->_arguments[1];
 					string dest = s.substr(1, s.length() - 2);
