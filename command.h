@@ -27,12 +27,14 @@ struct Command
 	int _outOverwrite;
 	int _background;
 	int _pipe;
+	int vef;
+	int pipeIN;
 
 	void prompt();
 	void print();
 	void execute();
 	void clear();
-	void verify(SimpleCommand *scmd);
+	void saveIO();
 
 	Command();
 	void insertSimpleCommand(SimpleCommand *simpleCommand);

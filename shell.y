@@ -23,11 +23,13 @@
 extern "C" 
 {
 	int yylex();
+	
 	void yyerror (char const *s);
 }
 #define yylex yylex
 #include <stdio.h>
 #include "command.h"
+extern FILE *yyin;
 %}
 
 %define parse.error verbose
@@ -47,9 +49,12 @@ command: simple_command
         ;
 
 simple_command:	
-	command_and_args iomodifier_opt NEWLINE {
+	command_and_args iomodifier_opt verify {
+		yyin = stdin;
+		remove("cmd.txt");
 		printf("   Yacc: Execute command\n");
 		Command::_currentCommand.execute();
+
 	}
 	| NEWLINE 
 	| error NEWLINE { yyerrok; }
@@ -75,6 +80,22 @@ argument:
 	| command_word
 	;
 	
+verify:
+	{
+		Command::_currentCommand.saveIO();
+		FILE *f = fopen("cmd.txt","a+");
+		fprintf(f,"\n");
+		fclose(f);
+		if(!Command::_currentCommand.vef){
+		Command::_currentCommand.vef = 1;
+		Command::_currentCommand.clear();
+		yyin = fopen("cmd.txt","r");
+		yyparse();
+		}
+
+	}
+	;
+
 command_word:
 	WORD {
                printf("   Yacc: insert command \"%s\"\n", $1);
@@ -83,6 +104,7 @@ command_word:
 	       Command::_currentSimpleCommand->insertArgument( $1 );
 	}
 	| PIPE WORD {
+		Command::_currentCommand.pipeIN = 1;
 		Command::_currentCommand.
 			insertSimpleCommand( Command::_currentSimpleCommand );
 

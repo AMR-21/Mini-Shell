@@ -18,11 +18,11 @@
 #include <signal.h>
 #include <fcntl.h>
 #include "y.tab.h"
+#include <time.h>
 
 #include "command.h"
 
 extern int yyparse(void);
-extern FILE *yyin;
 
 SimpleCommand::SimpleCommand()
 {
@@ -34,6 +34,39 @@ SimpleCommand::SimpleCommand()
 
 void SimpleCommand::insertArgument(char *argument)
 {
+	FILE *c = fopen("cmd.txt", "a+");
+	int i = 0;
+	if (Command::_currentCommand.pipeIN)
+	{
+		fprintf(c, " | ");
+		Command::_currentCommand.pipeIN = 0;
+	}
+
+	while (argument[i])
+	{
+		if (argument[i] == '>' ||
+				argument[i] == '<' ||
+				argument[i] == '&' ||
+				argument[i] == '|')
+		{
+			fprintf(c, " ");
+			fprintf(c, "%c", argument[i]);
+			if (argument[i + 1] == '>' && argument[i] != '&')
+			{
+				i++;
+				fprintf(c, "%c", argument[i]);
+			}
+			fprintf(c, " ");
+		}
+		else
+		{
+			fprintf(c, "%c", argument[i]);
+		}
+		i++;
+	}
+
+	fprintf(c, " ");
+	fclose(c);
 
 	if (_numberOfAvailableArguments == _numberOfArguments + 1)
 	{
@@ -51,6 +84,39 @@ void SimpleCommand::insertArgument(char *argument)
 	_numberOfArguments++;
 }
 
+void Command::saveIO()
+{
+	FILE *c = fopen("cmd.txt", "a+");
+	int i = 0;
+
+	if (Command::_currentCommand._inputFile)
+	{
+		fprintf(c, " < ");
+		fprintf(c, "%s", Command::_currentCommand._inputFile);
+	}
+
+	if (Command::_currentCommand._errFile)
+		fprintf(c, " & ");
+
+	if (Command::_currentCommand._outFile)
+	{
+		if (Command::_currentCommand._outOverwrite)
+		{
+			fprintf(c, " > ");
+		}
+		else
+			fprintf(c, " >> ");
+
+		fprintf(c, "%s", Command::_currentCommand._outFile);
+	}
+
+	if (Command::_currentCommand._background)
+		fprintf(c, " & ");
+
+	fprintf(c, " ");
+	fclose(c);
+}
+
 Command::Command()
 {
 	// Create available space for one simple command
@@ -65,6 +131,8 @@ Command::Command()
 	_outOverwrite = 0;
 	_background = 0;
 	_pipe = 0;
+	vef = 0;
+	pipeIN = 0;
 }
 
 void Command::insertSimpleCommand(SimpleCommand *simpleCommand)
@@ -93,6 +161,11 @@ void Command::clear()
 		free(_simpleCommands[i]);
 	}
 
+	if (_errFile && _errFile != _outFile)
+	{
+		free(_errFile);
+	}
+
 	if (_outFile)
 	{
 		free(_outFile);
@@ -101,11 +174,6 @@ void Command::clear()
 	if (_inputFile)
 	{
 		free(_inputFile);
-	}
-
-	if (_errFile)
-	{
-		free(_errFile);
 	}
 
 	_numberOfSimpleCommands = 0;
@@ -161,11 +229,12 @@ void Command::execute()
 	// Setup i/o redirection
 	// and call exec
 	int currentIn = 0, defaultin, defaultout, defaulterr, outFl, inFl, errFl, errorFlag = 0;
+	int fd[2];
+	pid_t pid;
+
 	defaultin = dup(0);
 	defaultout = dup(1);
 	defaulterr = dup(2);
-	int fd[2];
-	pid_t pid;
 
 	// Open the input file
 	if (_inputFile)
@@ -342,23 +411,36 @@ void Command::prompt()
 	printf("Current Directory> %s\n", getcwd(curr, 100));
 	printf("myshell> ");
 	fflush(stdout);
+	vef = 0;
 }
 
 Command Command::_currentCommand;
 SimpleCommand *Command::_currentSimpleCommand;
 
-void signal_handler(int signo)
+void exit_handler(int signo)
 {
-	signal(SIGINT, signal_handler);
 	printf("\n\nYou can't exit the program with ctrl+c..if you want to exit type exit\n\n");
 	Command::_currentCommand.prompt();
 	fflush(stdout);
 }
 
+void child_death_handler(int signo)
+{
+	FILE *log = fopen("log", "a+");
+	time_t rawtime;
+	struct tm *timeinfo;
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	fprintf(log, "Child terminated at %s\n", asctime(timeinfo));
+	fclose(log);
+}
+
 int main()
 {
 	Command::_currentCommand.prompt();
-	signal(SIGINT, signal_handler);
+	signal(SIGINT, exit_handler);
+	signal(SIGCHLD, child_death_handler);
 	yyparse();
 
 	return 0;
